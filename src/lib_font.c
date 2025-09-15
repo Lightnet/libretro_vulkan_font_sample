@@ -406,10 +406,14 @@ static void init_text_vertex_buffer(void)
       return;
    }
 
-   float scale = 1.0f; // Adjust as needed (e.g., FONT_SIZE / ATLAS_HEIGHT)
+   float scale = FONT_SIZE / ATLAS_HEIGHT; // Base scale
+   scale *= (float)height / FONT_SIZE; // Adjust to screen height
+   scale = 1.0f;
    float x = 0.0f, y = 0.0f;
    float min_x = FLT_MAX, max_x = -FLT_MAX;
    float min_y = FLT_MAX, max_y = -FLT_MAX;
+
+   // First pass: compute bounding box
    for (size_t i = 0; i < len; i++) {
       stbtt_aligned_quad q;
       stbtt_GetBakedQuad(font.cdata, ATLAS_WIDTH, ATLAS_HEIGHT, text[i] - 32, &x, &y, &q, 1);
@@ -421,12 +425,14 @@ static void init_text_vertex_buffer(void)
 
    float text_width = max_x - min_x;
    float text_height = max_y - min_y;
-   float start_x = (width - text_width * scale) * 0.5f;
-   float start_y = (height - text_height * scale) * 0.5f;
+   float start_x = (width - text_width * scale) * 0.5f; // Center horizontally
+   float start_y = (height - text_height * scale) * 0.5f; // Center vertically
 
    size_t vtx_count = 0, idx_count = 0;
-   x = start_x;
-   y = start_y;
+   x = 0.0f; // Reset x for second pass
+   y = 0.0f;
+
+   // Second pass: generate vertices
    for (size_t i = 0; i < len; i++) {
       stbtt_aligned_quad q;
       stbtt_GetBakedQuad(font.cdata, ATLAS_WIDTH, ATLAS_HEIGHT, text[i] - 32, &x, &y, &q, 1);
@@ -434,17 +440,17 @@ static void init_text_vertex_buffer(void)
       fprintf(stderr, "[libretro-test]: Char %c: x0=%.1f, y0=%.1f, x1=%.1f, y1=%.1f, s0=%.3f, t0=%.3f, s1=%.3f, t1=%.3f\n",
               text[i], q.x0 * scale, q.y0 * scale, q.x1 * scale, q.y1 * scale, q.s0, q.t0, q.s1, q.t1);
 
-      vertices[vtx_count + 0].pos[0] = q.x0 * scale;
-      vertices[vtx_count + 0].pos[1] = q.y0 * scale;
+      vertices[vtx_count + 0].pos[0] = q.x0 * scale + start_x;
+      vertices[vtx_count + 0].pos[1] = -(q.y0 * scale) + start_y; // Flip Y
       vertices[vtx_count + 0].tex[0] = q.s0;
-      vertices[vtx_count + 0].tex[1] = q.t0;
+      vertices[vtx_count + 0].tex[1] = q.t0; // No flip needed for texture
       vertices[vtx_count + 0].color[0] = 1.0f;
       vertices[vtx_count + 0].color[1] = 1.0f;
       vertices[vtx_count + 0].color[2] = 1.0f;
       vertices[vtx_count + 0].color[3] = 1.0f;
 
-      vertices[vtx_count + 1].pos[0] = q.x1 * scale;
-      vertices[vtx_count + 1].pos[1] = q.y0 * scale;
+      vertices[vtx_count + 1].pos[0] = q.x1 * scale + start_x;
+      vertices[vtx_count + 1].pos[1] = -(q.y0 * scale) + start_y;
       vertices[vtx_count + 1].tex[0] = q.s1;
       vertices[vtx_count + 1].tex[1] = q.t0;
       vertices[vtx_count + 1].color[0] = 1.0f;
@@ -452,8 +458,8 @@ static void init_text_vertex_buffer(void)
       vertices[vtx_count + 1].color[2] = 1.0f;
       vertices[vtx_count + 1].color[3] = 1.0f;
 
-      vertices[vtx_count + 2].pos[0] = q.x1 * scale;
-      vertices[vtx_count + 2].pos[1] = q.y1 * scale;
+      vertices[vtx_count + 2].pos[0] = q.x1 * scale + start_x;
+      vertices[vtx_count + 2].pos[1] = -(q.y1 * scale) + start_y;
       vertices[vtx_count + 2].tex[0] = q.s1;
       vertices[vtx_count + 2].tex[1] = q.t1;
       vertices[vtx_count + 2].color[0] = 1.0f;
@@ -461,8 +467,8 @@ static void init_text_vertex_buffer(void)
       vertices[vtx_count + 2].color[2] = 1.0f;
       vertices[vtx_count + 2].color[3] = 1.0f;
 
-      vertices[vtx_count + 3].pos[0] = q.x0 * scale;
-      vertices[vtx_count + 3].pos[1] = q.y1 * scale;
+      vertices[vtx_count + 3].pos[0] = q.x0 * scale + start_x;
+      vertices[vtx_count + 3].pos[1] = -(q.y1 * scale) + start_y;
       vertices[vtx_count + 3].tex[0] = q.s0;
       vertices[vtx_count + 3].tex[1] = q.t1;
       vertices[vtx_count + 3].color[0] = 1.0f;
@@ -503,6 +509,7 @@ static void init_text_vertex_buffer(void)
    free(indices);
    fprintf(stderr, "[libretro-test]: Vertex and index buffers initialized\n");
 }
+
 
 
 static void init_vertex_buffer(void)
