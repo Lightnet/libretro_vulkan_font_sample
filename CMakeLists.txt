@@ -51,14 +51,11 @@ set(LIB_NAME libretro_vulkan)
 
 # Define the shared library (Libretro core)
 add_library(${LIB_NAME} SHARED 
-
-    
     #libretro files for vulkan
     ${libretro_common_SOURCE_DIR}/vulkan/vulkan_symbol_wrapper.c
-    # test files main
+    # test files lib
     # src/lib.c
     src/lib_font.c
-    
 )
 
 target_link_libraries(${LIB_NAME} PRIVATE 
@@ -79,20 +76,3 @@ target_include_directories(${LIB_NAME} PRIVATE
 #     PREFIX ""
 #     OUTPUT_NAME "libretro_core_vulkan"
 # )
-
-# Platform-specific settings for Windows (MinGW/MSYS2)
-# if (WIN32)
-#     # Link necessary Windows libraries for raylib
-#     target_link_libraries(${LIB_NAME} PRIVATE
-#         opengl32
-#         gdi32
-#         winmm
-#     )
-
-#     # Static linking for libgcc and libstdc++
-#     target_link_options(${LIB_NAME} PRIVATE
-#         -static-libgcc
-#         -static-libstdc++  # Uncomment if C++ code is used
-#         -static           # Avoid full static linking to prevent issues with system libraries
-#     )
-# endif()
