@@ -17,9 +17,6 @@
 #include "stb_truetype.h"
 #include <cglm/cglm.h>
 
-static struct retro_hw_render_callback hw_render;
-static const struct retro_hw_render_interface_vulkan *vulkan;
-
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240
 #define MAX_SYNC 8
@@ -27,6 +24,15 @@ static const struct retro_hw_render_interface_vulkan *vulkan;
 #define FONT_SIZE 32.0f
 #define ATLAS_WIDTH 512
 #define ATLAS_HEIGHT 512
+
+static struct retro_hw_render_callback hw_render;
+static const struct retro_hw_render_interface_vulkan *vulkan;
+static retro_video_refresh_t video_cb;
+static retro_audio_sample_t audio_cb;
+static retro_audio_sample_batch_t audio_batch_cb;
+static retro_environment_t environ_cb;
+static retro_input_poll_t input_poll_cb;
+static retro_input_state_t input_state_cb;
 
 static unsigned width  = BASE_WIDTH;
 static unsigned height = BASE_HEIGHT;
@@ -83,12 +89,9 @@ struct vertex {
     float color[4];
 };
 
+void retro_init(void){}
 
-void retro_init(void)
-{}
-
-void retro_deinit(void)
-{}
+void retro_deinit(void){}
 
 unsigned retro_api_version(void)
 {
@@ -125,13 +128,6 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
       .aspect_ratio = (float)BASE_WIDTH / (float)BASE_HEIGHT,
    };
 }
-
-static retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
 
 void retro_set_environment(retro_environment_t cb)
 {
@@ -193,72 +189,6 @@ static uint32_t find_memory_type_from_requirements(
    return 0;
 }
 
-// static void update_ubo(void)
-// {
-//    static unsigned frame;
-//    float c = cosf(frame * 0.01f);
-//    float s = sinf(frame * 0.01f);
-//    frame++;
-//    float tmp[16] = {0.0f};
-//    tmp[ 0] = c;
-//    tmp[ 1] = s;
-//    tmp[ 4] = -s;
-//    tmp[ 5] = c;
-//    tmp[10] = 1.0f;
-//    tmp[15] = 1.0f;
-//    float *mvp = NULL;
-//    vkMapMemory(vulkan->device, vk.ubo[vk.index].memory,
-//          0, 16 * sizeof(float), 0, (void**)&mvp);
-//    memcpy(mvp, tmp, sizeof(tmp));
-//    vkUnmapMemory(vulkan->device, vk.ubo[vk.index].memory);
-// }
-
-// static void update_ubo(void)
-// {
-//    float tmp[16] = {
-//       1.0f, 0.0f, 0.0f, 0.0f, // Row 1: No rotation, no scaling
-//       0.0f, 1.0f, 0.0f, 0.0f, // Row 2
-//       0.0f, 0.0f, 1.0f, 0.0f, // Row 3
-//       0.0f, 0.0f, 0.0f, 1.0f  // Row 4
-//    };
-
-//    float *mvp = NULL;
-//    vkMapMemory(vulkan->device, vk.ubo[vk.index].memory,
-//          0, 16 * sizeof(float), 0, (void**)&mvp);
-//    memcpy(mvp, tmp, sizeof(tmp));
-//    vkUnmapMemory(vulkan->device, vk.ubo[vk.index].memory);
-// }
-
-
-// static void update_ubo(void) //white block.
-// {
-//    float tmp[16] = {
-//       1.0f, 0.0f, 0.0f, 0.0f,
-//       0.0f, 1.0f, 0.0f, 0.0f,
-//       0.0f, 0.0f, 1.0f, 0.0f,
-//       0.0f, 0.0f, 0.0f, 1.0f
-//    };
-
-//    float *mvp = NULL;
-//    vkMapMemory(vulkan->device, vk.ubo[vk.index].memory,
-//          0, 16 * sizeof(float), 0, (void**)&mvp);
-//    memcpy(mvp, tmp, 16 * sizeof(float));
-//    vkUnmapMemory(vulkan->device, vk.ubo[vk.index].memory);
-// }
-
-// static void update_ubo(void)
-// {
-//    mat4 ortho;
-//    glm_ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f, ortho);
-
-//    float *mvp = NULL;
-//    vkMapMemory(vulkan->device, vk.ubo[vk.index].memory,
-//          0, 16 * sizeof(float), 0, (void**)&mvp);
-//    memcpy(mvp, ortho, 16 * sizeof(float));
-//    vkUnmapMemory(vulkan->device, vk.ubo[vk.index].memory);
-// }
-
-
 static void update_ubo(void)
 {
    mat4 ortho;
@@ -270,8 +200,6 @@ static void update_ubo(void)
    memcpy(mvp, ortho, 16 * sizeof(float));
    vkUnmapMemory(vulkan->device, vk.ubo[vk.index].memory);
 }
-
-
 
 static void vulkan_test_render(void)
 {
@@ -348,8 +276,6 @@ static void vulkan_test_render(void)
    vkEndCommandBuffer(cmd);
 }
 
-
-
 //===============================================
 // 
 //===============================================
@@ -386,7 +312,6 @@ static struct buffer create_buffer(const void *initial, size_t size, VkBufferUsa
 
    return buffer;
 }
-
 
 static void init_text_vertex_buffer(void)
 {
@@ -510,8 +435,6 @@ static void init_text_vertex_buffer(void)
    fprintf(stderr, "[libretro-test]: Vertex and index buffers initialized\n");
 }
 
-
-
 static void init_vertex_buffer(void)
 {
    static const float data[] = {
@@ -541,8 +464,6 @@ static VkShaderModule create_shader_module(const uint32_t *data, size_t size)
    vkCreateShaderModule(vulkan->device, &module_info, NULL, &module);
    return module;
 }
-
-
 
 static void init_descriptor(void)
 {
@@ -638,8 +559,6 @@ static void init_descriptor(void)
    }
    fprintf(stderr, "[libretro-test]: Descriptor sets initialized\n");
 }
-
-
 
 static void init_pipeline(void)
 {
@@ -740,7 +659,6 @@ static void init_pipeline(void)
    fprintf(stderr, "[libretro-test]: Pipeline initialized\n");
 }
 
-
 static void init_render_pass(VkFormat format)
 {
    fprintf(stderr, "[libretro-test]: Initializing render pass with format: %d\n", format);
@@ -770,8 +688,6 @@ static void init_render_pass(VkFormat format)
       fprintf(stderr, "[libretro-test]: Failed to create render pass: %d\n", res);
    }
 }
-
-
 
 static void init_swapchain(void)
 {
@@ -838,10 +754,7 @@ static void init_swapchain(void)
    }
 }
 
-
 // In vulkan_test_init, after init_swapchain
-
-
 static void init_font(void)
 {
    const char *system_dir = NULL;
@@ -1082,7 +995,6 @@ static void init_font(void)
    fprintf(stderr, "[libretro-test]: Font initialization completed\n");
 }
 
-
 static void init_command(void)
 {
    VkCommandPoolCreateInfo pool_info = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -1111,7 +1023,6 @@ static void init_command(void)
    }
    fprintf(stderr, "[libretro-test]: Command pools and buffers initialized\n");
 }
-
 
 static void vulkan_test_init(void)
 {
@@ -1147,8 +1058,6 @@ static void vulkan_test_init(void)
 
    fprintf(stderr, "[libretro-test]: Vulkan initialization completed\n");
 }
-
-
 
 static void vulkan_test_deinit(void)
 {
@@ -1194,7 +1103,6 @@ static void vulkan_test_deinit(void)
    memset(&vk, 0, sizeof(vk));
 }
 
-
 static void update_variables(void)
 {
    struct retro_variable var = {
@@ -1217,8 +1125,6 @@ static void update_variables(void)
       fprintf(stderr, "[libretro-test]: Got size: %u x %u.\n", width, height);
    }
 }
-
-
 
 void retro_run(void)
 {
@@ -1250,8 +1156,6 @@ void retro_run(void)
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, width, height, 0);
    fprintf(stderr, "[libretro-test]: retro_run completed\n");
 }
-
-
 
 static void context_reset(void)
 {
@@ -1290,7 +1194,6 @@ static void context_reset(void)
    vulkan_test_init();
    fprintf(stderr, "[libretro-test]: Context reset completed\n");
 }
-
 
 static void context_destroy(void)
 {
@@ -1353,8 +1256,7 @@ bool retro_load_game(const struct retro_game_info *info)
    return true;
 }
 
-void retro_unload_game(void)
-{}
+void retro_unload_game(void){}
 
 unsigned retro_get_region(void)
 {
@@ -1400,11 +1302,9 @@ size_t retro_get_memory_size(unsigned id)
    return 0;
 }
 
-void retro_reset(void)
-{}
+void retro_reset(void){}
 
-void retro_cheat_reset(void)
-{}
+void retro_cheat_reset(void){}
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code)
 {
